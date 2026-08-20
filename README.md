@@ -8,20 +8,20 @@ product brief in [`prd.md`](prd.md).
 
 ## Structure
 
-- `IndiaInStamps/` — the SwiftUI app (Xcode project generated via [XcodeGen](https://github.com/yonaskolb/XcodeGen) from `project.yml`)
+- `App design 1/` — the SwiftUI app (Xcode project generated via [XcodeGen](https://github.com/yonaskolb/XcodeGen) from `project.yml`; product/target name is still `IndiaInStamps` internally — this folder name just labels the design direction)
 - `Stamps Enriched.csv` / `Stamps Raw.csv` — the catalog dataset
 - `Scripts/` — data cleanup/enrichment scripts used to build the dataset
 - `Wikipedia Stamp Collection/` — cross-reference data used during enrichment
 
 ## Building
 
-The app bundles `Stamps Enriched.csv` directly (see `IndiaInStamps/Sources/Resources/`). Stamp
+The app bundles `Stamps Enriched.csv` directly (see `App design 1/Sources/Resources/`). Stamp
 *images* are not included in this repo (1.4GB of source photography) — the Xcode project expects
 a local `Stamps Images/` folder at the repo root, organized as `Stamps Images/<year>/<file>.jpg`,
-symlinked or copied into `IndiaInStamps/Sources/Resources/StampImages` before building.
+symlinked or copied into `App design 1/Sources/Resources/StampImages` before building.
 
 ```bash
-cd IndiaInStamps
+cd "App design 1"
 xcodegen generate   # only needed if project.yml changed
 open IndiaInStamps.xcodeproj
 ```

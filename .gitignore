@@ -1,11 +1,7 @@
 # Source stamp photography — 1.4GB, excluded by design. The app's project.yml bundles this
 # folder at build time from a local "Stamps Images/" directory that isn't tracked here.
 Stamps Images/
-IndiaInStamps/Sources/Resources/StampImages
-
-# Superseded prototype scaffolding — predates the current design, kept locally, not pushed.
-Indian Stamps App/
-Indian Stamps Project/
+App design 1/Sources/Resources/StampImages
 
 # Local agent tooling — not part of the project
 .claude/
@@ -15,8 +11,8 @@ Indian Stamps Project/
 .DS_Store
 
 # Xcode
-IndiaInStamps/*.xcodeproj/xcuserdata/
-IndiaInStamps/*.xcodeproj/project.xcworkspace/xcuserdata/
-IndiaInStamps/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+App design 1/*.xcodeproj/xcuserdata/
+App design 1/*.xcodeproj/project.xcworkspace/xcuserdata/
+App design 1/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
 *.xcuserstate
 DerivedData/
