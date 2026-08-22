@@ -3,6 +3,19 @@
 Stamps Images/
 App design 1/Sources/Resources/StampImages
 
+# Perforation-cleaned stamp photography (Scripts/Extract Clean Stamps.py output) — 1.8GB,
+# excluded for the same reason as "Stamps Images/" above. App design 2's project.yml bundles
+# this at build time from a local "Stamps Images Clean/" directory that isn't tracked here.
+Stamps Images Clean/
+App design 2/Sources/Resources/StampImages
+App design 2/Sources/Resources/StampImagesClean
+
+# Python bytecode cache
+Scripts/__pycache__/
+
+# Blender auto-backup (duplicate of the tracked .blend, regenerated on every save)
+*.blend1
+
 # Local agent tooling — not part of the project
 .claude/
 .agents/
@@ -14,5 +27,8 @@ App design 1/Sources/Resources/StampImages
 App design 1/*.xcodeproj/xcuserdata/
 App design 1/*.xcodeproj/project.xcworkspace/xcuserdata/
 App design 1/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+App design 2/*.xcodeproj/xcuserdata/
+App design 2/*.xcodeproj/project.xcworkspace/xcuserdata/
+App design 2/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
 *.xcuserstate
 DerivedData/
