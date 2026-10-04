@@ -2,14 +2,13 @@ import SwiftUI
 
 /// design.md §9.3 — hero image on a bg.glassTint mat (echoing a museum specimen mount), then
 /// denomination/date, tag chips, and the historical description. Floating Clear-glass toolbar:
-/// back / save / share, over the hero image — the one place in the app Clear glass is justified
-/// (§4.1: media-rich content underneath, bold and bright).
+/// back / share, over the hero image — the one place in the app Clear glass is justified
+/// (§4.1: media-rich content underneath, bold and bright). No save/favorite button — Collections
+/// removed per your direction.
 struct StampDetailView: View {
     let stamp: Stamp
-    @Environment(CollectionsStore.self) private var collectionsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @State private var contentVisible = false
 
     var body: some View {
@@ -96,18 +95,6 @@ struct StampDetailView: View {
                 }
 
                 Spacer()
-
-                toolbarButton(
-                    systemImage: collectionsStore.isSaved(stamp) ? "bookmark.fill" : "bookmark",
-                    label: collectionsStore.isSaved(stamp) ? "Saved to collection" : "Save to collection",
-                    tint: collectionsStore.isSaved(stamp) ? StampColor.accentPrimary : nil
-                ) {
-                    if hapticsEnabled {
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    }
-                    collectionsStore.save(stamp)
-                }
-                .disabled(collectionsStore.isSaved(stamp))
 
                 ShareLink(item: stamp.pageURL ?? URL(string: "https://postagestamps.gov.in")!) {
                     Image(systemName: "square.and.arrow.up")

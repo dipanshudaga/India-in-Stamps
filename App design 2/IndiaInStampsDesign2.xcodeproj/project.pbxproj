@@ -29,14 +29,12 @@
 		CC93FAF64B887ECD3FA96168 /* StampDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74CBACFAF5E4AE8684533BBC /* StampDetailView.swift */; };
 		D3EFD071702400693C777238 /* Stamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C3920BB4945DFFB1B61B98A /* Stamp.swift */; };
 		DA8F044AFAB81C8D6A99B80F /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A288175C12CE5B886D1FD1 /* Colors.swift */; };
-		DD88BECADA02CE8E96DA29D0 /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 919588A097949A1F916E2469 /* CollectionsStore.swift */; };
-		E11C1F77AAC12A8718B0BABD /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE9830D51B8843F3B3388EC2 /* CollectionDetailView.swift */; };
 		E73765C4190F32D43969E2C2 /* StampsEnriched.csv in Resources */ = {isa = PBXBuildFile; fileRef = 6F75A2FD2CD239EC5B7670EA /* StampsEnriched.csv */; };
 		E8604DDAA1F2D2F8DD164330 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DF299400B31F84C9BB4422 /* AboutView.swift */; };
-		F5FC746F81BDFFD0340CCB0D /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D264CF92CD18511BCE3E3E88 /* CollectionsView.swift */; };
 		FAD1D0406FD9C4C0684CB6AA /* TiltMotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988A03D18807CD3B6B76EF20 /* TiltMotionManager.swift */; };
 		FB337F2C36580573B8577E04 /* TimelineRuler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59ACDC31B205EADA029044FF /* TimelineRuler.swift */; };
 		FCA3B23ABEB33C4C03486BEC /* MissingImagePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12BE368401956ED0DDDB81E /* MissingImagePlaceholder.swift */; };
+		1A2B3C4D5E6F7089A1B2C3D4 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E7D6C5B4A3928170695E4 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,7 +53,6 @@
 		7AB7A7D023BF2EBDC2A7CCDB /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
 		8BE7C1BAE74B75970DA0DE05 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8C3920BB4945DFFB1B61B98A /* Stamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stamp.swift; sourceTree = "<group>"; };
-		919588A097949A1F916E2469 /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
 		97A288175C12CE5B886D1FD1 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		988A03D18807CD3B6B76EF20 /* TiltMotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TiltMotionManager.swift; sourceTree = "<group>"; };
 		A14E9CBEA73568DC9BAE53AA /* PaperTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperTexture.swift; sourceTree = "<group>"; };
@@ -63,13 +60,12 @@
 		B0112C20E0DD3550ADFCE180 /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		B6CB5E4483BA3C5060F0257D /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		CAF8BDF10D19D89EA364591B /* CustomIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomIcons.swift; sourceTree = "<group>"; };
-		D264CF92CD18511BCE3E3E88 /* CollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsView.swift; sourceTree = "<group>"; };
 		D565C6160D777F9FFCE0A003 /* LocalStampImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStampImage.swift; sourceTree = "<group>"; };
 		D886C7D8C184805E43634549 /* IndiaInStampsDesign2.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = IndiaInStampsDesign2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDB0CA1CB9E522F4D0EE4659 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		E12BE368401956ED0DDDB81E /* MissingImagePlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingImagePlaceholder.swift; sourceTree = "<group>"; };
+		9F8E7D6C5B4A3928170695E4 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		F791476F75EA5CF56202E4C1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
-		FE9830D51B8843F3B3388EC2 /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
 		FED4AF935F31526027009B53 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -116,15 +112,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		1AC1160DBA79821D810CCACD /* Collections */ = {
-			isa = PBXGroup;
-			children = (
-				FE9830D51B8843F3B3388EC2 /* CollectionDetailView.swift */,
-				D264CF92CD18511BCE3E3E88 /* CollectionsView.swift */,
-			);
-			path = Collections;
-			sourceTree = "<group>";
-		};
 		1B546DBF9A4BE8B0A8D81946 /* Gallery */ = {
 			isa = PBXGroup;
 			children = (
@@ -164,6 +151,14 @@
 			path = Search;
 			sourceTree = "<group>";
 		};
+		2D3E4F5061728394A5B6C7D8 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				9F8E7D6C5B4A3928170695E4 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		4F99CCF2C2E7DD54D750E8DD /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
@@ -178,7 +173,6 @@
 		549F45C834818E87583D9465 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				919588A097949A1F916E2469 /* CollectionsStore.swift */,
 				7AB7A7D023BF2EBDC2A7CCDB /* CSVParser.swift */,
 				0F579A776E93EE36D6B8EC11 /* StampRepository.swift */,
 				988A03D18807CD3B6B76EF20 /* TiltMotionManager.swift */,
@@ -191,10 +185,10 @@
 			isa = PBXGroup;
 			children = (
 				F791476F75EA5CF56202E4C1 /* RootTabView.swift */,
-				1AC1160DBA79821D810CCACD /* Collections */,
 				49372BDC2AC89D1DC2FFB584 /* Components */,
 				C1C7A565F93D77F799D0FD64 /* Detail */,
 				1B546DBF9A4BE8B0A8D81946 /* Gallery */,
+				2D3E4F5061728394A5B6C7D8 /* Onboarding */,
 				4E0816D734D717D2560237AE /* Search */,
 				113B84B9B664F992FCB0F23E /* Settings */,
 				4F99CCF2C2E7DD54D750E8DD /* Timeline */,
@@ -305,9 +299,6 @@
 				E8604DDAA1F2D2F8DD164330 /* AboutView.swift in Sources */,
 				0D4CA7C1AE439202CEBCDC6F /* CSVParser.swift in Sources */,
 				29CF4411F217955F9A105EC3 /* CalendarView.swift in Sources */,
-				E11C1F77AAC12A8718B0BABD /* CollectionDetailView.swift in Sources */,
-				DD88BECADA02CE8E96DA29D0 /* CollectionsStore.swift in Sources */,
-				F5FC746F81BDFFD0340CCB0D /* CollectionsView.swift in Sources */,
 				DA8F044AFAB81C8D6A99B80F /* Colors.swift in Sources */,
 				7AC3C2BF6C9A04FDD20041D7 /* CustomIcons.swift in Sources */,
 				8F1E37B7014C22F51E75409F /* DisplayCase.swift in Sources */,
@@ -316,6 +307,7 @@
 				3C807228BC309FF6E5235AA0 /* LocalStampImage.swift in Sources */,
 				FCA3B23ABEB33C4C03486BEC /* MissingImagePlaceholder.swift in Sources */,
 				16174EED3503D2A09235D1CB /* Motion.swift in Sources */,
+				1A2B3C4D5E6F7089A1B2C3D4 /* OnboardingView.swift in Sources */,
 				B0FB887C12C1C22515BA1917 /* PaperTexture.swift in Sources */,
 				8C03092796DE0B0597429880 /* PerforationDivider.swift in Sources */,
 				C061767F7E795F4BFF287A59 /* RootTabView.swift in Sources */,

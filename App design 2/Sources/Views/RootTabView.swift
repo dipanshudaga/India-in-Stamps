@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// design.md §8 — 4 tabs: Timeline, Gallery, Search (role: .search, rendered as its own floating
-/// affordance rather than a fourth inline icon), Collections.
+/// design.md §8 — 4 tabs: Timeline, Gallery, Calendar, Search (role: .search — its own floating
+/// affordance rather than a fourth inline icon). No Collections/save-to-favorites — removed per
+/// your direction.
 ///
-/// NOTE: Collections' custom "stamp album/binder" tab icon (§5.2) is bespoke artwork this pass
-/// can't produce — "book.closed" stands in until that asset exists.
+/// Deliberately no `.searchable(...)` here. It used to sit on this `TabView`, above every tab's own
+/// `NavigationStack` — that made a system search field leak onto every tab (not just the Search
+/// tab), and typed queries didn't reliably reach `SearchView.results` since the binding lived a
+/// level above where the results were computed. `Tab(role: .search)` alone still gives Search its
+/// distinct tab-bar treatment; `SearchView` now owns and renders its own search field instead.
 struct RootTabView: View {
-    @State private var searchText = ""
-
     var body: some View {
         TabView {
             Tab("Timeline", systemImage: "clock") {
@@ -16,14 +18,13 @@ struct RootTabView: View {
             Tab("Gallery", systemImage: "square.grid.2x2") {
                 NavigationStack { GalleryView() }
             }
-            Tab(role: .search) {
-                NavigationStack { SearchView(searchText: $searchText) }
+            Tab("Calendar", systemImage: "calendar") {
+                NavigationStack { CalendarView() }
             }
-            Tab("Collections", systemImage: "book.closed") {
-                NavigationStack { CollectionsView() }
+            Tab(role: .search) {
+                NavigationStack { SearchView() }
             }
         }
-        .searchable(text: $searchText, placement: .automatic)
         .tabBarMinimizeBehavior(.onScrollDown)
         .tint(StampColor.accentPrimary)
     }

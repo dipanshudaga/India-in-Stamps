@@ -32,3 +32,6 @@ App design 2/*.xcodeproj/project.xcworkspace/xcuserdata/
 App design 2/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
 *.xcuserstate
 DerivedData/
+
+# Xcode build output (3.9GB) for App design 2
+App design 2/build/

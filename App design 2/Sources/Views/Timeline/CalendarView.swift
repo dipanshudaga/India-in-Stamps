@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// Browse the catalog by release date — a real month grid, days with a stamp issued are marked,
-/// tapping one shows what was released. Reached from Timeline's toolbar rather than a 5th tab.
+/// tapping one shows what was released. Its own bottom tab; `RootTabView` supplies the enclosing
+/// `NavigationStack`, same as every other tab.
 struct CalendarView: View {
     @Environment(StampRepository.self) private var repository
-    @Environment(\.dismiss) private var dismiss
     @State private var displayedMonth = Date()
     @State private var selectedDayKey: String?
     @State private var selectedStamp: Stamp?
@@ -20,27 +20,19 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    monthHeader
-                    weekdayHeader
-                    monthGrid
-                    if let key = selectedDayKey, let stamps = stampsByDate[key], !stamps.isEmpty {
-                        selectedDayResults(stamps)
-                    }
-                }
-                .padding(20)
-            }
-            .stampPageBackground()
-            .navigationTitle("Calendar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                monthHeader
+                weekdayHeader
+                monthGrid
+                if let key = selectedDayKey, let stamps = stampsByDate[key], !stamps.isEmpty {
+                    selectedDayResults(stamps)
                 }
             }
+            .padding(20)
         }
+        .stampPageBackground()
+        .navigationTitle("Calendar")
         .sheet(item: $selectedStamp) { stamp in
             StampDetailView(stamp: stamp)
         }
@@ -157,15 +149,27 @@ struct CalendarView: View {
                 if let date {
                     dayCell(date)
                 } else {
-                    Color.clear.frame(height: 40)
+                    Color.clear.frame(height: dayCellHeight)
                 }
             }
         }
     }
 
+    private let thumbnailSize: CGFloat = 44
+    private var dayCellHeight: CGFloat { thumbnailSize + 20 }
+
+    /// A day with stamps shows an actual thumbnail of one of them (not just a dot) - the same
+    /// "photo calendar" convention Photos/Google Photos use, so scanning the month for what was
+    /// issued reads at a glance instead of needing to tap every marked day. The thumbnail sits
+    /// tilted over the date number rather than stacked below it - like a photo casually dropped on
+    /// a calendar page, with the number still peeking out from behind - matching the tilted-photo
+    /// treatment this app already uses elsewhere. Multiple stamps on one date get a small count
+    /// badge on the thumbnail's corner rather than the thumbnail itself trying to represent more
+    /// than one stamp.
     private func dayCell(_ date: Date) -> some View {
         let key = dayKey(for: date)
-        let hasStamps = stampsByDate[key] != nil
+        let dayStamps = stampsByDate[key] ?? []
+        let hasStamps = !dayStamps.isEmpty
         let isSelected = selectedDayKey == key
         let dayNumber = calendar.component(.day, from: date)
 
@@ -174,17 +178,37 @@ struct CalendarView: View {
                 selectedDayKey = isSelected ? nil : key
             }
         } label: {
-            VStack(spacing: 4) {
+            ZStack {
                 Text("\(dayNumber)")
                     .font(StampFont.subheadline())
-                    .foregroundStyle(isSelected ? .white : StampColor.inkPrimary)
-                Circle()
-                    .fill(hasStamps ? (isSelected ? Color.white : StampColor.accentPrimary) : .clear)
-                    .frame(width: 4, height: 4)
+                    .foregroundStyle(isSelected ? StampColor.accentPrimary : StampColor.inkSecondary)
+
+                if let cover = dayStamps.first {
+                    ZStack(alignment: .topTrailing) {
+                        LocalStampImage(url: cover.localImageURL, contentMode: .fill)
+                            .frame(width: thumbnailSize, height: thumbnailSize)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(isSelected ? StampColor.accentPrimary : .clear, lineWidth: 2)
+                            )
+                            .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 2)
+
+                        if dayStamps.count > 1 {
+                            Text("\(dayStamps.count)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 15, minHeight: 15)
+                                .background(StampColor.accentPrimary, in: Circle())
+                                .offset(x: 6, y: -6)
+                        }
+                    }
+                    .rotationEffect(.degrees(-9))
+                    .offset(x: 5, y: 3)
+                }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 40)
-            .background(isSelected ? StampColor.accentPrimary : Color.clear, in: Circle())
+            .frame(height: dayCellHeight)
         }
         .buttonStyle(.plain)
         .opacity(hasStamps ? 1 : 0.3)

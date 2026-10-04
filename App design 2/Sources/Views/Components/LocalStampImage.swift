@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 /// Shared decoded-image cache so revisiting a stamp (scrolling back, swiping back and forth) shows
 /// it instantly instead of re-reading and re-decoding from disk every time. Also the target for
@@ -26,6 +27,24 @@ final class ImageCache: @unchecked Sendable {
             cache.setObject(loaded, forKey: url as NSURL)
         }
         return loaded
+    }
+}
+
+/// Feeds Gallery's masonry layout (`MasonryLayout`) each stamp's real aspect ratio as soon as its
+/// image has actually loaded, without a separate decode pass over the whole catalog - `LocalStampImage`
+/// below already decodes every image it shows, this just records the ratio alongside that existing
+/// work. A masonry cell starts at a neutral 1:1 placeholder and reflows once its real ratio lands.
+@MainActor
+@Observable
+final class ImageAspectRatioStore {
+    static let shared = ImageAspectRatioStore()
+    private(set) var ratios: [URL: CGFloat] = [:]
+
+    func ratio(for url: URL) -> CGFloat? { ratios[url] }
+
+    func record(_ image: UIImage, for url: URL) {
+        guard image.size.height > 0, ratios[url] == nil else { return }
+        ratios[url] = image.size.width / image.size.height
     }
 }
 
@@ -57,10 +76,14 @@ struct LocalStampImage: View {
             // Already-cached (e.g. prefetched ahead of a swipe) shows synchronously - no flash.
             if let cached = ImageCache.shared.image(for: url) {
                 image = cached
+                ImageAspectRatioStore.shared.record(cached, for: url)
                 return
             }
             image = nil
             image = await ImageCache.shared.load(url)
+            if let image {
+                ImageAspectRatioStore.shared.record(image, for: url)
+            }
         }
     }
 }

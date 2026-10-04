@@ -4,13 +4,26 @@ import SwiftUI
 /// case, with a horizontal scrubber beneath it — restyled with this direction's aesthetic
 /// (museum case, near-white ground, bold serif). The year-list read the stamps too small; one
 /// large specimen at a time lets the display case (and the stamp itself) actually be seen.
+///
+/// Paging is built on SwiftUI's native paged-scroll mechanism (`.scrollTargetBehavior(.paging)` +
+/// `.scrollPosition(id:)`, iOS 17+) rather than a hand-rolled offset/transition system. Two
+/// different custom approaches were tried and both broke in ways that kept surfacing as "wrong
+/// direction" or "not smooth": manually animating an offset through phases with `Task.sleep`
+/// (two mutations with no render boundary between them got coalesced into one animation), and then
+/// `.id(stamp.id)` + `.transition(.asymmetric(...))` (removal animated correctly but insertion
+/// settled instantly, confirmed by slowing the animation to 10 seconds and watching it happen).
+/// Native paged scrolling sidesteps the whole class of bug: UIScrollView's own paging physics — the
+/// same mechanism Photos itself uses — owns the slide, direction, and momentum; there's no custom
+/// animation code left to get out of sync.
 struct TimelineView: View {
     @Environment(StampRepository.self) private var repository
     @State private var currentIndex = 0
+    @State private var scrollPosition: Int?
     @State private var selectedStamp: Stamp?
-    @State private var isPresentingCalendar = false
-    @State private var swipeOffset: CGFloat = 0
-    @State private var isSwipeAnimating = false
+    @State private var zoomScale: CGFloat = 1
+    @State private var zoomBaseline: CGFloat = 1
+    @State private var zoomPanOffset: CGSize = .zero
+    @State private var zoomPanBaseline: CGSize = .zero
 
     private let cardWidth: CGFloat = 280
 
@@ -20,15 +33,21 @@ struct TimelineView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 12)
 
-            Group {
-                if let stamp = currentStamp {
-                    featuredStamp(stamp)
-                } else {
-                    ProgressView()
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
+                    ForEach(stamps) { stamp in
+                        featuredStamp(stamp)
+                            .containerRelativeFrame(.horizontal)
+                    }
                 }
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.paging)
+            .scrollClipDisabled()
+            .scrollPosition(id: $scrollPosition)
+            .scrollIndicators(.hidden)
+            .scrollDisabled(zoomScale > 1.01)
             .frame(height: 300)
-            .padding(.horizontal, 40)
 
             Spacer(minLength: 12)
 
@@ -39,35 +58,46 @@ struct TimelineView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .stampPageBackground()
-        .toolbar(removing: .search)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    isPresentingCalendar = true
-                } label: {
-                    Image(systemName: "calendar")
-                }
-                .accessibilityLabel("Browse by release date")
-            }
-        }
+        .navigationTitle("Timeline")
         .sheet(item: $selectedStamp) { stamp in
             StampDetailView(stamp: stamp)
-        }
-        .sheet(isPresented: $isPresentingCalendar) {
-            CalendarView()
         }
         .task(id: currentIndex) {
             await prefetchNeighbors()
         }
+        .onChange(of: currentIndex) {
+            resetZoom()
+            // The ruler (or an initial load) changed the index directly - bring the scroll view
+            // to match if it isn't already there.
+            let targetID = stamps.indices.contains(currentIndex) ? stamps[currentIndex].id : nil
+            if scrollPosition != targetID {
+                withAnimation(StampMotion.fast) { scrollPosition = targetID }
+            }
+        }
+        .onChange(of: scrollPosition) {
+            // The scroll view settled on a new page from a swipe - that's the source of truth for
+            // the ruler now.
+            guard let scrollPosition, let index = stamps.firstIndex(where: { $0.id == scrollPosition }) else { return }
+            if currentIndex != index {
+                currentIndex = index
+            }
+        }
+        .task {
+            if scrollPosition == nil, stamps.indices.contains(currentIndex) {
+                scrollPosition = stamps[currentIndex].id
+            }
+        }
     }
 
-    private var currentStamp: Stamp? {
-        stamps.indices.contains(currentIndex) ? stamps[currentIndex] : nil
+    private func resetZoom() {
+        zoomScale = 1
+        zoomBaseline = 1
+        zoomPanOffset = .zero
+        zoomPanBaseline = .zero
     }
 
-    /// Warms the image cache for the stamps a swipe would land on next, so the transition in
-    /// `advance(forward:)` never has to wait on a fresh disk read + decode mid-animation - that
-    /// wait was the actual cause of the swipe "flash," more than the animation curve itself.
+    /// Warms the image cache for the stamps a swipe would land on next, so scrolling to a fresh
+    /// page never has to wait on a disk read + decode mid-swipe.
     private func prefetchNeighbors() async {
         for offset in [-2, -1, 1, 2] {
             let index = currentIndex + offset
@@ -81,65 +111,51 @@ struct TimelineView: View {
             LocalStampImage(url: stamp.localImageURL)
         }
         .frame(width: cardWidth, height: cardWidth)
-        .offset(x: swipeOffset)
-        .animation(StampMotion.fast, value: stamp.id)
+        .scaleEffect(zoomScale)
+        .offset(zoomPanOffset)
+        // Panning while zoomed. `minimumDistance` jumps to an effectively-unreachable value while
+        // not zoomed, rather than just no-op'ing in the handlers - the ScrollView's own paging
+        // gesture is `.scrollDisabled` above 1x already, but leaving this recognizer live (even as
+        // a no-op) while at 1x risked it competing with the ScrollView's pan recognizer for touch
+        // priority; a minimum distance it can never reach means it never activates at all.
         .gesture(
-            DragGesture(minimumDistance: 12)
+            DragGesture(minimumDistance: zoomScale > 1.01 ? 4 : 10_000)
                 .onChanged { value in
-                    guard !isSwipeAnimating else { return }
-                    swipeOffset = value.translation.width
+                    zoomPanOffset = CGSize(
+                        width: zoomPanBaseline.width + value.translation.width,
+                        height: zoomPanBaseline.height + value.translation.height
+                    )
                 }
-                .onEnded { value in
-                    guard !isSwipeAnimating else { return }
-                    handleSwipeEnd(translation: value.translation.width)
+                .onEnded { _ in
+                    zoomPanBaseline = zoomPanOffset
                 }
         )
+        .simultaneousGesture(
+            MagnificationGesture()
+                .onChanged { value in
+                    zoomScale = min(max(zoomBaseline * value, 1), 4)
+                }
+                .onEnded { _ in
+                    zoomBaseline = zoomScale
+                    if zoomScale <= 1.05 {
+                        withAnimation(StampMotion.fast) { resetZoom() }
+                    }
+                }
+        )
+        .onTapGesture(count: 2) {
+            withAnimation(StampMotion.fast) {
+                if zoomScale > 1.01 {
+                    resetZoom()
+                } else {
+                    zoomScale = 2.2
+                    zoomBaseline = 2.2
+                }
+            }
+        }
         .onTapGesture {
             selectedStamp = stamp
         }
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Swipe left or right to browse, or tap to view details")
-    }
-
-    private func handleSwipeEnd(translation: CGFloat) {
-        let threshold: CGFloat = 60
-        if translation < -threshold, currentIndex < stamps.count - 1 {
-            advance(forward: true)
-        } else if translation > threshold, currentIndex > 0 {
-            advance(forward: false)
-        } else {
-            withAnimation(StampMotion.fast) {
-                swipeOffset = 0
-            }
-        }
-    }
-
-    /// A committed swipe completes the gesture's own motion instead of truncating it: the current
-    /// card finishes sliding fully off-screen in the direction it was already moving, *then* the
-    /// index changes and the new card enters from the **opposite** side and settles to center —
-    /// swipe left, current card exits left, next stamp enters from the right (standard paging
-    /// convention, e.g. Photos app) — rather than an instant content swap under one animation.
-    ///
-    /// Sequenced with `Task` + explicit sleeps rather than nested `withAnimation(completion:)`
-    /// calls — a bare (non-animated) state assignment sandwiched between two nested completion
-    /// handlers doesn't reliably get its own render pass before the next animation starts, which
-    /// made the two phases blur together unpredictably. Waiting past the spring's own settle time
-    /// guarantees phase 1 has actually finished on screen before phase 2 begins.
-    private func advance(forward: Bool) {
-        isSwipeAnimating = true
-        let exitOffset: CGFloat = forward ? -(cardWidth + 40) : (cardWidth + 40)
-        withAnimation(StampMotion.fast) {
-            swipeOffset = exitOffset
-        }
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(0.42))
-            swipeOffset = -exitOffset
-            currentIndex += forward ? 1 : -1
-            withAnimation(StampMotion.fast) {
-                swipeOffset = 0
-            }
-            try? await Task.sleep(for: .seconds(0.42))
-            isSwipeAnimating = false
-        }
+        .accessibilityHint("Swipe left or right to browse, double-tap or pinch to zoom, or tap to view details")
     }
 }

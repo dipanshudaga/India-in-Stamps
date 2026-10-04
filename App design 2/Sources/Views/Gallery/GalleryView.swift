@@ -1,48 +1,60 @@
 import SwiftUI
 
-/// design.md §9.2 restyled: uniform display-case size across every stamp (per your direction —
-/// the source images' native aspect ratios varied enough that masonry read as inconsistent box
-/// sizes, not intentional variety). A fixed grid instead of masonry; each stamp's image still
-/// aspect-fits within its case rather than being cropped, just centered/letterboxed if needed.
+/// design.md §9.2, back to masonry per your direction: a fixed-height grid read varying stamp
+/// aspect ratios as inconsistent box sizes, but true masonry (each column packed by real image
+/// aspect ratio) is what "intentional variety" actually looks like. Built as one `LazyVStack` per
+/// column rather than SwiftUI's `Layout` protocol - a custom `Layout` always instantiates every
+/// subview upfront (not lazy), which is exactly the class of bug that already crashed this app on
+/// -device once over the full dataset (see HANDOFF.md). Per-column `LazyVStack`s each virtualize
+/// independently, so only on-screen cells across all 3,045 stamps are ever built. No parallax on
+/// individual cells here (`StampCard(parallaxEnabled: false)`) - many cells tilting independently
+/// on device motion reads as chaotic rather than physical.
 struct GalleryView: View {
     @Environment(StampRepository.self) private var repository
     @State private var selectedStamp: Stamp?
-    @State private var selectedType: String?
+    @State private var shuffledStamps: [Stamp] = []
+    private let aspectRatioStore = ImageAspectRatioStore.shared
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-    ]
+    private let columnCount = 2
 
-    private var types: [String] {
-        Array(Set(repository.stamps.map(\.type).filter { !$0.isEmpty })).sorted()
-    }
-
-    private var filteredStamps: [Stamp] {
-        guard let selectedType else { return repository.stamps }
-        return repository.stamps.filter { $0.type == selectedType }
+    /// Greedy shortest-column distribution (same idea a masonry `Layout` would use for placement,
+    /// just precomputed into column arrays instead of positioned per-frame) - each stamp goes into
+    /// whichever column currently has the least estimated height. Recomputing this over up to 3,045
+    /// stamps is cheap (single pass, no image decoding); what has to stay lazy is *rendering*, which
+    /// the per-column `LazyVStack`s below handle.
+    private var columnedStamps: [[Stamp]] {
+        var columns = [[Stamp]](repeating: [], count: columnCount)
+        var heights = [CGFloat](repeating: 0, count: columnCount)
+        for stamp in shuffledStamps {
+            let ratio = stamp.localImageURL.flatMap { aspectRatioStore.ratio(for: $0) } ?? 1
+            let shortest = heights.indices.min(by: { heights[$0] < heights[$1] }) ?? 0
+            columns[shortest].append(stamp)
+            heights[shortest] += 1 / max(ratio, 0.2)
+        }
+        return columns
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                typeFilterChips
-
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(filteredStamps) { stamp in
-                        Button {
-                            selectedStamp = stamp
-                        } label: {
-                            StampCard(stamp: stamp)
-                                .frame(height: 130)
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(0..<columnCount, id: \.self) { column in
+                        LazyVStack(spacing: 12) {
+                            ForEach(columnedStamps[column]) { stamp in
+                                Button {
+                                    selectedStamp = stamp
+                                } label: {
+                                    StampCard(stamp: stamp, parallaxEnabled: false)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
                     }
                 }
                 .padding(.horizontal, 20)
 
-                Text("\(filteredStamps.count) stamps")
+                Text("\(shuffledStamps.count) stamps")
                     .font(StampFont.footnote())
                     .foregroundStyle(StampColor.inkTertiary)
                     .padding(.bottom, 12)
@@ -54,35 +66,12 @@ struct GalleryView: View {
             StampDetailView(stamp: stamp)
         }
         .navigationTitle("Gallery")
-    }
-
-    private var typeFilterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                chip(label: "All", isActive: selectedType == nil) {
-                    withAnimation(StampMotion.fast) { selectedType = nil }
-                }
-                ForEach(types, id: \.self) { type in
-                    chip(label: type, isActive: selectedType == type) {
-                        withAnimation(StampMotion.fast) {
-                            selectedType = selectedType == type ? nil : type
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
+        // Shuffled once (not recomputed every body evaluation, which scrolling/tapping would
+        // trigger constantly) and re-shuffled only if the underlying catalog actually changes size
+        // - covers both the empty-at-launch state (repository still loading) and later reloads.
+        .task(id: repository.stamps.count) {
+            guard shuffledStamps.count != repository.stamps.count else { return }
+            shuffledStamps = repository.stamps.shuffled()
         }
-    }
-
-    private func chip(label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Text(label)
-            .font(StampFont.footnote())
-            .foregroundStyle(isActive ? .white : StampColor.inkSecondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .background(isActive ? StampColor.accentPrimary : StampColor.bgCard, in: Capsule())
-            .overlay(Capsule().strokeBorder(isActive ? .clear : StampColor.accentStructural, lineWidth: 1))
-            .contentShape(Capsule())
-            .onTapGesture(perform: action)
     }
 }

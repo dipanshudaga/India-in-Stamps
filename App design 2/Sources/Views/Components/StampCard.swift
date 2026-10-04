@@ -5,9 +5,10 @@ import SwiftUI
 /// stamp image itself — real stamps have straight-edge corners; the case frame is what's rounded.
 struct StampCard: View {
     let stamp: Stamp
+    var parallaxEnabled: Bool = true
 
     var body: some View {
-        DisplayCase {
+        DisplayCase(parallaxEnabled: parallaxEnabled) {
             LocalStampImage(url: stamp.localImageURL)
         }
         .accessibilityLabel(stamp.name)

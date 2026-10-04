@@ -21,6 +21,11 @@ struct DisplayCase<Content: View>: View {
     @Environment(TiltMotionManager.self) private var tilt
     var content: Content
 
+    /// Off in grid contexts (Gallery, Search results, Collections cards) — many cells tilting
+    /// independently on device motion reads as chaotic rather than physical. On by default for
+    /// single-stamp hero contexts (Timeline's featured stamp, the detail view).
+    var parallaxEnabled: Bool = true
+
     /// Temporarily off: the Blender-rendered case (frame/backing/glass) isn't at the quality bar
     /// yet, so the case chrome is hidden and stamps show plainly while that work continues
     /// separately. Flip back to `true` once the case render is approved — nothing else about this
@@ -36,7 +41,8 @@ struct DisplayCase<Content: View>: View {
     /// re-measure this from the new PNG rather than recomputing it from Blender geometry.
     private let recessFraction: CGFloat = 0.9141
 
-    init(@ViewBuilder content: () -> Content) {
+    init(parallaxEnabled: Bool = true, @ViewBuilder content: () -> Content) {
+        self.parallaxEnabled = parallaxEnabled
         self.content = content()
     }
 
@@ -57,22 +63,22 @@ struct DisplayCase<Content: View>: View {
     private var plainBody: some View {
         content
             .aspectRatio(contentMode: .fit)
-            .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 7)
-            .shadow(color: .black.opacity(0.12), radius: 2, x: 0, y: 1)
+            .shadow(color: .black.opacity(0.28), radius: 22, x: 0, y: 16)
+            .shadow(color: .black.opacity(0.16), radius: 5, x: 0, y: 3)
             .rotation3DEffect(
-                .radians(clampedTilt(tilt.pitch) * -1.1),
+                .radians(parallaxEnabled ? clampedTilt(tilt.pitch) * -1.0 : 0),
                 axis: (x: 1, y: 0, z: 0),
                 perspective: 0.35
             )
             .rotation3DEffect(
-                .radians(clampedTilt(tilt.roll) * 1.1),
+                .radians(parallaxEnabled ? clampedTilt(tilt.roll) * 1.0 : 0),
                 axis: (x: 0, y: 1, z: 0),
                 perspective: 0.35
             )
     }
 
     private func clampedTilt(_ radians: Double) -> Double {
-        min(max(radians, -0.3), 0.3)
+        min(max(radians, -0.25), 0.25)
     }
 
     private var caseBody: some View {
