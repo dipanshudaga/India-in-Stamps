@@ -1,4 +1,4 @@
-"""Converts `Stamps Enriched.csv` to the JSON the Expo app bundles as a local asset.
+"""Converts `Stamps Enriched.csv` to the JSON the web app bundles (web/src/data/stamps.json).
 
 Mirrors `App Mobile/../App design 2/Sources/Data/StampRepository.swift`'s row-to-Stamp mapping so
 both apps read the same catalog. Re-run whenever the CSV changes:
@@ -11,7 +11,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CSV_PATH = REPO_ROOT / "Stamps Enriched.csv"
-OUT_PATH = REPO_ROOT / "App Mobile" / "src" / "data" / "stamps.json"
+OUT_PATH = REPO_ROOT / "web" / "src" / "data" / "stamps.json"
 CLEAN_ROOT = REPO_ROOT / "Stamps Images Clean"
 
 

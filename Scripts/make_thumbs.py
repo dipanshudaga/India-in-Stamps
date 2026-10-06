@@ -1,14 +1,13 @@
-"""Builds grid thumbnails from `Stamps Images Clean/` for the Expo app and lays out the dev image
-server root (`App Mobile/dev-assets/`):
+"""Builds grid thumbnails from `Stamps Images Clean/` for the web app and lays out its static image
+root (`web/public/stamps/`):
 
-    dev-assets/thumbs/<year>/<file>.webp  360px max, alpha preserved (grid cells)
-    dev-assets/full -> ../../Stamps Images Clean   (symlink, detail hero)
+    stamps/thumbs/<year>/<file>.webp  360px max, alpha preserved (grid cells)
+    stamps/full -> ../../../Stamps Images Clean   (symlink, detail hero)
 
 The same `thumbs/` + `full/` prefixes are what gets uploaded to R2 later, so the app's URL scheme
 doesn't change between dev and production. Re-runnable; skips thumbs that already exist.
 
     python3 Scripts/make_thumbs.py
-    cd "App Mobile" && python3 -m http.server 8090 --directory dev-assets
 """
 import os
 from concurrent.futures import ProcessPoolExecutor
@@ -18,7 +17,7 @@ from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC = REPO_ROOT / "Stamps Images Clean"
-DEV = REPO_ROOT / "App Mobile" / "dev-assets"
+DEV = REPO_ROOT / "web" / "public" / "stamps"
 THUMBS = DEV / "thumbs"
 MAX_DIM = 360
 

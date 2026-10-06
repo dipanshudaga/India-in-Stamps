@@ -35,3 +35,7 @@ DerivedData/
 
 # Xcode build output (3.9GB) for App design 2
 App design 2/build/
+
+# Web app: generated stamp images (thumbs, atlas sheets, previews) + the symlink to Stamps Images Clean/.
+# Rebuilt by Scripts/make_thumbs.py and Scripts/make_wall.py; production serves them from a CDN/R2.
+web/public/stamps/

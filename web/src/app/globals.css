@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Palette ported from the native app's Colors.swift ("modern museum": near-white gallery wall, warm
+   ink). Light only, by design - the stamps' own colours carry the page. */
+:root {
+  --bg-page: #faf8f4;
+  --bg-card: #ffffff;
+  --bg-tint: #f3f0e9;
+  --ink: #26221d;
+  --ink-2: #6b6455;
+  --ink-3: #a79e8c;
+  --accent: #6e6350;
+  --structural: #b8ad98;
+}
+
+@theme inline {
+  --color-page: var(--bg-page);
+  --color-card: var(--bg-card);
+  --color-tint: var(--bg-tint);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-structural: var(--structural);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-newsreader);
+}
+
+html,
+body {
+  background: var(--bg-page);
+  color: var(--ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* The wall is a full-viewport canvas: no page scroll, no browser pan/zoom gestures on it. */
+.wall-surface {
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}
