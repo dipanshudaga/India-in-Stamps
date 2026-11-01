@@ -1,21 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { denominationDisplay, stampImageUrl, type Stamp } from "@/lib/stamp";
+
+// Where the clicked stamp sat on screen (px, viewport-relative), so it can fly into the panel.
+export type FlightOrigin = { x: number; y: number; size: number };
+
+// Matches the desktop drawer layout below: 440px wide, p-6, hero box mt-6, image inset-8, square.
+const DRAWER_W = 440;
+const HERO_PAD = 24 + 32;
 
 // The Wall's detail panel: a side drawer on wide screens, a bottom sheet on phones. Fetches one
 // stamp from /api/stamps/[id] (the catalog itself stays on the server).
 export function StampDetail({
   id,
+  origin,
   onClose,
 }: {
   id: number | null;
+  origin?: FlightOrigin | null;
   onClose: () => void;
 }) {
   const [stamp, setStamp] = useState<Stamp | null>(null);
   const [loadedFull, setLoadedFull] = useState<number | null>(null);
+  const [landed, setLanded] = useState<FlightOrigin | null>(null);
+  const flyer = useRef<HTMLImageElement>(null);
   const open = id !== null;
 
   useEffect(() => {
@@ -46,7 +57,50 @@ export function StampDetail({
   const thumb = shown && stampImageUrl(shown, "thumb");
   const full = shown && stampImageUrl(shown, "full");
 
+  // Fly the stamp from its spot on the wall to its place in the panel (desktop drawer only; on phones
+  // the bottom sheet just slides up). Both ends are square boxes with object-contain, so they match.
+  // Derived, not stored: it flies once per click (`origin` is a fresh object each time), on desktop only.
+  const canFly =
+    typeof window !== "undefined" &&
+    window.innerWidth >= 640 &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const flying = canFly && open && shown && origin && landed !== origin ? shown.id : null;
+  useEffect(() => {
+    const el = flyer.current;
+    if (flying === null || !el || !origin) return;
+    const size = Math.min(DRAWER_W - 48 - 64, window.innerHeight - 112);
+    const toX = window.innerWidth - DRAWER_W + HERO_PAD;
+    const toY = HERO_PAD + 24;
+    const s = origin.size / size;
+    const anim = el.animate(
+      [
+        { transform: `translate(${origin.x - toX}px, ${origin.y - toY}px) scale(${s})`, transformOrigin: "0 0" },
+        { transform: "translate(0, 0) scale(1)", transformOrigin: "0 0" },
+      ],
+      { duration: 750, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" },
+    );
+    anim.finished.then(() => setLanded(origin)).catch(() => {});
+    return () => anim.cancel();
+  }, [flying, origin]);
+
   return (
+    <>
+      {flying !== null && thumb && origin && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          ref={flyer}
+          src={thumb}
+          alt=""
+          aria-hidden
+          className="pointer-events-none fixed z-30 object-contain drop-shadow-[0_14px_22px_rgba(60,40,10,0.28)]"
+          style={{
+            left: window.innerWidth - DRAWER_W + HERO_PAD,
+            top: HERO_PAD + 24,
+            width: Math.min(DRAWER_W - 48 - 64, window.innerHeight - 112),
+            height: Math.min(DRAWER_W - 48 - 64, window.innerHeight - 112),
+          }}
+        />
+      )}
     <aside
       role="dialog"
       aria-label="Stamp details"
@@ -74,7 +128,9 @@ export function StampDetail({
 
       {shown ? (
         <div className="flex flex-col gap-5 p-6 pb-10">
-          <div className="relative mt-6 flex aspect-square items-center justify-center rounded-3xl bg-tint p-8">
+          <div
+            className={`relative mt-6 flex aspect-square items-center justify-center rounded-3xl bg-tint p-8 [&_img]:transition-opacity ${flying === shown.id ? "[&_img]:opacity-0!" : ""}`}
+          >
             {thumb && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -134,5 +190,6 @@ export function StampDetail({
         <div className="p-6 pt-20 text-ink-3">{open ? "Loading..." : null}</div>
       )}
     </aside>
+    </>
   );
 }

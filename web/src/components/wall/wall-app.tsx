@@ -3,7 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { StampDetail } from "@/components/stamp-detail";
+import { StampDetail, type FlightOrigin } from "@/components/stamp-detail";
 
 import { useWallControls, unitsPerPx } from "./use-wall-controls";
 import {
@@ -29,6 +29,7 @@ function initialControls(stampId?: number): { current: Controls } {
     dragging: false,
     viewW: 1280,
     viewH: 800,
+    hover: -1,
   };
   if (stampId !== undefined) {
     const i = IDS.indexOf(stampId);
@@ -58,28 +59,117 @@ export function WallApp({
   const [selectedId, setSelectedId] = useState<number | null>(
     initialStampId ?? null,
   );
+  const [origin, setOrigin] = useState<FlightOrigin | null>(null);
+  const [intro, setIntro] = useState(true);
   const [controls] = useState(() => initialControls(initialStampId));
+  const cursor = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
 
+  // Screen position -> wall index, or undefined if the point is in a gap between stamps.
   // Not memoised: useWallControls always calls the latest version, so identity doesn't matter.
-  const pick = (x: number, y: number) => {
-    if (busy) return;
+  const cellAt = (x: number, y: number) => {
     const c = controls.current;
     const u = unitsPerPx(c);
     const wx = c.x + (x - c.viewW / 2) * u;
     const wy = c.y - (y - c.viewH / 2) * u;
     const gx = Math.round(wx / PITCH);
     const gy = Math.round(wy / PITCH);
-    // Only a hit if the click landed on the stamp itself, not in the gap between cells.
-    if (
-      Math.abs(wx - gx * PITCH) > SIZE / 2 ||
-      Math.abs(wy - gy * PITCH) > SIZE / 2
-    )
-      return;
-    const index = stampAtCell(lens, gx, gy);
-    if (index !== undefined) setSelectedId(IDS[index]);
+    // Only a hit if the point is on the stamp itself, not in the gap between cells.
+    if (Math.abs(wx - gx * PITCH) > SIZE / 2 || Math.abs(wy - gy * PITCH) > SIZE / 2) return undefined;
+    return stampAtCell(lens, gx, gy);
+  };
+  const pick = (x: number, y: number) => {
+    if (busy) return;
+    const index = cellAt(x, y);
+    if (index === undefined) return;
+    // Where the stamp sits on screen right now, so the detail view can fly it into place.
+    const c = controls.current;
+    const u = unitsPerPx(c);
+    const size = SIZE / u;
+    setOrigin({
+      x: c.viewW / 2 + (LAYOUTS[lens][index * 2] - c.x) / u - size / 2,
+      y: c.viewH / 2 - (LAYOUTS[lens][index * 2 + 1] - c.y) / u - size / 2,
+      size,
+    });
+    setSelectedId(IDS[index]);
   };
   useWallControls(surface, controls, pick);
+
+  // Custom cursor + hover detection. The cursor eases toward the pointer in its own rAF loop; hover
+  // writes straight into `controls` (read by the render loop), so there is no React render per move.
+  const cellAtRef = useRef(cellAt);
+  const detailOpen = useRef(false);
+  useEffect(() => {
+    cellAtRef.current = cellAt;
+    detailOpen.current = selectedId !== null;
+  });
+  useEffect(() => {
+    const node = surface.current;
+    const el = cursor.current;
+    if (!node || !el) return;
+    const c = controls.current;
+    const target = { x: -100, y: -100 };
+    const pos = { x: -100, y: -100 };
+    let raf = 0;
+    const label = { idle: "Drag", open: "Open", dragging: "" } as const;
+    let state: keyof typeof label | "hidden" = "hidden";
+    const setState = (next: keyof typeof label | "hidden") => {
+      if (next === state) return;
+      state = next;
+      el.dataset.state = next;
+      el.textContent = next === "hidden" ? "" : label[next];
+    };
+    setState("hidden");
+
+    const tick = () => {
+      pos.x += (target.x - pos.x) * 0.22;
+      pos.y += (target.y - pos.y) * 0.22;
+      el.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    const move = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const r = node.getBoundingClientRect();
+      target.x = e.clientX;
+      target.y = e.clientY;
+      if (state === "hidden") {
+        pos.x = target.x;
+        pos.y = target.y;
+      }
+      if (c.dragging || detailOpen.current) {
+        c.hover = -1;
+        setState(c.dragging ? "dragging" : "idle");
+        return;
+      }
+      const hit = cellAtRef.current(e.clientX - r.left, e.clientY - r.top);
+      c.hover = hit ?? -1;
+      setState(hit === undefined ? "idle" : "open");
+    };
+    const leave = () => {
+      c.hover = -1;
+      setState("hidden");
+    };
+    node.addEventListener("pointermove", move);
+    node.addEventListener("pointerdown", move);
+    node.addEventListener("pointerup", move);
+    node.addEventListener("pointerleave", leave);
+    return () => {
+      cancelAnimationFrame(raf);
+      node.removeEventListener("pointermove", move);
+      node.removeEventListener("pointerdown", move);
+      node.removeEventListener("pointerup", move);
+      node.removeEventListener("pointerleave", leave);
+    };
+  }, [controls]);
+
+  // The opening line stays up while the stamps fly in, then gives way to the wall.
+  useEffect(() => {
+    if (!ready) return;
+    const t = setTimeout(() => setIntro(false), window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2600);
+    return () => clearTimeout(t);
+  }, [ready]);
 
   // Keep the URL shareable without navigating: /?s=<id> while a stamp is open.
   useEffect(() => {
@@ -127,54 +217,69 @@ export function WallApp({
         </Canvas>
       </div>
 
-      {/* Soft page-coloured scrims so the title, year and lens switcher stay legible over stamps. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-page via-page/75 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-linear-to-t from-page via-page/70 to-transparent" />
+      {/* Soft page-coloured scrims so the type stays legible over stamps. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-b from-page via-page/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-linear-to-t from-page via-page/80 to-transparent" />
 
-      <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-5 sm:p-8">
-        <div className="max-w-[60%]">
-          <h1 className="font-serif text-2xl font-semibold tracking-tight sm:text-3xl">
-            India in Stamps
-          </h1>
-          <p className="mt-1 text-sm text-ink-2">
-            {COUNT.toLocaleString("en-IN")} stamps &middot; {active.caption}
-          </p>
-        </div>
-        {lens === "time" && year !== null && (
-          <p
-            className="font-serif text-5xl leading-none font-semibold tabular-nums text-ink/90 sm:text-7xl"
-            aria-live="polite"
-          >
-            {year}
-          </p>
-        )}
+      <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-5 font-mono text-[11px] tracking-[0.14em] text-ink-2 uppercase sm:px-8 sm:py-6">
+        <h1 className="font-semibold text-ink">India in Stamps</h1>
+        <p className="hidden sm:block">{COUNT.toLocaleString("en-IN")} stamps &middot; 1947 &ndash; today</p>
+        <p className="hidden md:block">Drag &middot; Scroll &middot; Click</p>
       </header>
 
       <nav
-        className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-3 sm:bottom-8"
+        className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-6 p-5 sm:px-8 sm:pb-7"
         aria-label="Lens"
       >
-        <div className="flex rounded-full bg-card/90 p-1 shadow-[0_2px_14px_rgba(60,40,10,0.18)] backdrop-blur">
-          {LENSES.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              aria-pressed={key === lens}
-              disabled={busy && key !== lens}
-              onClick={() => !busy && setLens(key)}
-              className={[
-                "rounded-full px-6 py-2 text-sm font-semibold transition-colors disabled:opacity-40",
-                key === lens ? "bg-ink text-page" : "text-ink-2 hover:text-ink",
-              ].join(" ")}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="max-w-[70%]">
+          <p className="font-serif text-3xl leading-[1.05] tracking-tight text-ink sm:text-5xl md:text-6xl">
+            <span className="text-ink-3">Every stamp, by</span>{" "}
+            {LENSES.map(({ key, label }, i) => (
+              <span key={key}>
+                {i > 0 && <span className="text-ink-3"> &middot; </span>}
+                <button
+                  type="button"
+                  aria-pressed={key === lens}
+                  disabled={busy && key !== lens}
+                  onClick={() => !busy && setLens(key)}
+                  className={[
+                    "cursor-pointer transition-colors duration-300 disabled:cursor-wait",
+                    key === lens ? "text-ink" : "text-ink-3 hover:text-ink-2",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              </span>
+            ))}
+          </p>
+          <p className="mt-2 font-mono text-[11px] tracking-[0.12em] text-ink-3 uppercase">{active.caption}</p>
         </div>
-        <p className="text-xs text-ink-3">
-          Drag to explore &middot; scroll to zoom &middot; click a stamp
-        </p>
+        {lens === "time" && year !== null && (
+          <p
+            className="font-serif text-6xl leading-none font-medium tracking-tight text-ink sm:text-8xl"
+            aria-live="polite"
+            aria-label={String(year)}
+          >
+            <RollingYear year={year} />
+          </p>
+        )}
       </nav>
+
+      <div
+        className={[
+          "pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center transition-opacity duration-1000",
+          ready && intro ? "opacity-100" : "opacity-0",
+        ].join(" ")}
+      >
+        <p className="max-w-3xl px-6 font-serif text-4xl leading-[1.05] tracking-tight text-ink sm:text-7xl">
+          Every stamp India
+          <br />
+          has ever issued.
+        </p>
+        <p className="font-mono text-[11px] tracking-[0.2em] text-ink-2 uppercase">Since 1947</p>
+      </div>
+
+      <div ref={cursor} className="wall-cursor" aria-hidden />
 
       {debug && (
         <p className="pointer-events-none absolute top-24 left-5 rounded-full bg-ink/70 px-3 py-1 text-[11px] text-white tabular-nums sm:left-8">
@@ -186,14 +291,35 @@ export function WallApp({
 
       {!ready && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-page">
-          <p className="font-serif text-2xl">Loading the wall&hellip;</p>
-          <p className="text-sm text-ink-3">
+          <p className="font-serif text-3xl">Loading the wall&hellip;</p>
+          <p className="font-mono text-[11px] tracking-[0.14em] text-ink-3 uppercase">
             Fetching {COUNT.toLocaleString("en-IN")} stamps
           </p>
         </div>
       )}
 
-      <StampDetail id={selectedId} onClose={closeDetail} />
+      <StampDetail id={selectedId} origin={origin} onClose={closeDetail} />
     </main>
+  );
+}
+
+// Each digit is a column of 0-9; changing the year slides the columns (see .roll-strip in globals.css).
+function RollingYear({ year }: { year: number }) {
+  return (
+    <span className="inline-flex" aria-hidden>
+      {String(year)
+        .split("")
+        .map((d, i) => (
+          <span key={i} className="roll-col">
+            <span className="roll-strip" style={{ transform: `translateY(${-Number(d) * 10}%)` }}>
+              {Array.from({ length: 10 }, (_, n) => (
+                <span key={n} className="tabular-nums">
+                  {n}
+                </span>
+              ))}
+            </span>
+          </span>
+        ))}
+    </span>
   );
 }

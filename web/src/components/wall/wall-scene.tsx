@@ -34,6 +34,8 @@ export type Controls = {
   dragging: boolean;
   viewW: number;
   viewH: number;
+  // Wall index of the stamp under the mouse, or -1. Written by the app, read by the render loop.
+  hover: number;
 };
 
 export type Stats = { fps: number; calls: number; tris: number; gx: number };
@@ -54,18 +56,42 @@ attribute vec2 aFrom;
 attribute vec2 aTo;
 attribute vec2 aCell;
 attribute float aStagger;
+attribute float aRand;
 uniform float uProgress;
 uniform float uSize;
 uniform float uLift;
 uniform float uCellUv;
+uniform float uIntro;
+uniform float uHoverAmt;
+uniform float uTilt;
+uniform vec2 uHover;
 varying vec2 vUv;
+varying float vFade;
+varying float vDim;
 
 void main() {
   float t = clamp((uProgress - aStagger * 0.45) / 0.55, 0.0, 1.0);
   float e = t * t * (3.0 - 2.0 * t);
   vec2 p = mix(aFrom, aTo, e);
   float lift = sin(e * 3.14159265) * uLift;
-  vec3 world = vec3(p + position.xy * uSize, lift);
+
+  // Intro: every stamp flies in from depth, staggered by its random seed.
+  float intro = clamp((uIntro - aRand * 0.55) / 0.45, 0.0, 1.0);
+  intro = 1.0 - pow(1.0 - intro, 3.0);
+
+  // Hover: the stamp under the cursor pops toward the viewer, the others dim a little.
+  float isHover = 1.0 - step(0.05, distance(p, uHover));
+  float hov = isHover * uHoverAmt;
+  vDim = uHoverAmt * (1.0 - isHover);
+  vFade = intro;
+
+  // Drag tilt: each stamp leans with the pan velocity by its own random amount.
+  float ang = uTilt * (aRand - 0.5) * 0.8;
+  float cs = cos(ang);
+  float sn = sin(ang);
+  vec2 q = position.xy * uSize * mix(0.55, 1.0, intro) * (1.0 + 0.16 * hov);
+  q = vec2(cs * q.x - sn * q.y, sn * q.x + cs * q.y);
+  vec3 world = vec3(p + q, lift + hov * 1.5 - (1.0 - intro) * 30.0);
 
   // Atlas lookup. Cell row 0 is the TOP of the sheet image; three flips uploaded images vertically.
   float vy = 1.0 - (aCell.y + 1.0) * uCellUv + uv.y * uCellUv;
@@ -78,11 +104,14 @@ void main() {
 const FRAGMENT = /* glsl */ `
 uniform sampler2D uMap;
 varying vec2 vUv;
+varying float vFade;
+varying float vDim;
 
 void main() {
   vec4 c = texture2D(uMap, vUv);
-  if (c.a < 0.04) discard;
-  gl_FragColor = vec4(c.rgb, c.a);
+  if (c.a * vFade < 0.04) discard;
+  vec3 page = vec3(0.980, 0.973, 0.957);
+  gl_FragColor = vec4(mix(c.rgb, page, vDim * 0.4), c.a * vFade);
 }
 `;
 
@@ -121,11 +150,14 @@ function buildMeshes(textures: THREE.Texture[], maxAnisotropy: number) {
     const to = new Float32Array(count * 2);
     const cell = new Float32Array(count * 2);
     const stagger = new Float32Array(count);
+    const rand = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       from[i * 2] = to[i * 2] = LAYOUTS.time[(offset + i) * 2];
       from[i * 2 + 1] = to[i * 2 + 1] = LAYOUTS.time[(offset + i) * 2 + 1];
       cell[i * 2] = i % PER_ROW;
       cell[i * 2 + 1] = Math.floor(i / PER_ROW);
+      rand[i] = Math.imul(offset + i + 1, 2654435761) >>> 0;
+      rand[i] /= 4294967296;
     }
 
     const geometry = new THREE.InstancedBufferGeometry();
@@ -137,6 +169,7 @@ function buildMeshes(textures: THREE.Texture[], maxAnisotropy: number) {
     geometry.setAttribute("aTo", new THREE.InstancedBufferAttribute(to, 2));
     geometry.setAttribute("aCell", new THREE.InstancedBufferAttribute(cell, 2));
     geometry.setAttribute("aStagger", new THREE.InstancedBufferAttribute(stagger, 1));
+    geometry.setAttribute("aRand", new THREE.InstancedBufferAttribute(rand, 1));
 
     const material = new THREE.ShaderMaterial({
       vertexShader: VERTEX,
@@ -149,6 +182,10 @@ function buildMeshes(textures: THREE.Texture[], maxAnisotropy: number) {
         uSize: { value: SIZE },
         uLift: { value: 4 },
         uCellUv: { value: CELL_UV },
+        uIntro: { value: 0 },
+        uHoverAmt: { value: 0 },
+        uTilt: { value: 0 },
+        uHover: { value: new THREE.Vector2(1e5, 1e5) },
       },
     });
 
@@ -167,9 +204,24 @@ function Sheets({ lens, controls, onReady, onBusy, onYear, onStats }: SceneProps
     () => buildMeshes(textures, gl.capabilities.getMaxAnisotropy()),
     [textures, gl],
   );
-  const run = useRef({ progress: 1, busy: false, applied: "time" as Lens, frames: 0, acc: 0, year: 0 });
+  const run = useRef({
+    progress: 1,
+    busy: false,
+    applied: "time" as Lens,
+    frames: 0,
+    acc: 0,
+    year: 0,
+    intro: 0,
+    hoverIdx: -1,
+    hoverAmt: 0,
+    tilt: 0,
+    reduce: false,
+  });
 
   useEffect(() => {
+    // Respect the OS "reduce motion" setting: no fly-in, no tilt.
+    run.current.reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (run.current.reduce) run.current.intro = 1;
     onReady();
   }, [onReady]);
 
@@ -245,6 +297,36 @@ function Sheets({ lens, controls, onReady, onBusy, onYear, onStats }: SceneProps
         onBusy(false);
       }
     }
+
+    const set = (name: string, value: number) => {
+      for (const mesh of meshes) (mesh.material as THREE.ShaderMaterial).uniforms[name].value = value;
+    };
+
+    // Intro fly-in (the shader staggers it per stamp).
+    if (state.intro < 1) {
+      state.intro = Math.min(1, state.intro + delta / 2.8);
+      set("uIntro", state.intro);
+    }
+
+    // Hover pop: ramp from 0 each time the hovered stamp changes.
+    if (c.hover !== state.hoverIdx) {
+      state.hoverIdx = c.hover;
+      if (c.hover >= 0) {
+        const lay = LAYOUTS[state.applied];
+        for (const mesh of meshes)
+          (mesh.material as THREE.ShaderMaterial).uniforms.uHover.value.set(lay[c.hover * 2], lay[c.hover * 2 + 1]);
+        state.hoverAmt = 0;
+      }
+    }
+    const wantHover = c.hover >= 0 && !state.busy && !c.dragging ? 1 : 0;
+    state.hoverAmt += (wantHover - state.hoverAmt) * (1 - Math.exp(-delta * 14));
+    set("uHoverAmt", state.hoverAmt);
+
+    // Drag tilt follows pan speed in screen pixels, smoothed.
+    const upp = (2 * c.z * Math.tan((FOV * Math.PI) / 360)) / c.viewH;
+    const tiltTarget = state.reduce ? 0 : Math.min(Math.max(c.vx / upp / 1400, -1), 1);
+    state.tilt += (tiltTarget - state.tilt) * (1 - Math.exp(-delta * 8));
+    set("uTilt", state.tilt);
 
     state.frames++;
     state.acc += delta;

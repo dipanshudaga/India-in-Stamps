@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Newsreader } from "next/font/google";
+import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"] });
 const newsreader = Newsreader({ variable: "--font-newsreader", subsets: ["latin"] });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${newsreader.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${newsreader.variable} ${mono.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );
