@@ -25,16 +25,20 @@ export function Archive({
   const root = useRef<HTMLElement>(null);
   const [filter, setFilter] = useState(-1); // -1 = all, else index into tags
   const [shown, setShown] = useState(PAGE);
+  const [query, setQuery] = useState("");
   useReveal(root);
 
   const mixed = useMemo(() => [...stamps].sort((a, b) => hash(a.id) - hash(b.id)), [stamps]);
-  const matches = useMemo(() => (filter < 0 ? mixed : mixed.filter((s) => s.k.includes(filter))), [mixed, filter]);
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return mixed.filter((s) => (filter < 0 || s.k.includes(filter)) && (!q || s.n.toLowerCase().includes(q)));
+  }, [mixed, filter, query]);
 
   return (
     <section ref={root} id="archive" className="relative px-5 pt-32 pb-32 sm:px-10">
       <p className="reveal font-mono text-[11px] tracking-[0.2em] text-accent uppercase">The archive</p>
 
-      <h2 className="reveal mt-6 max-w-6xl font-serif text-5xl leading-[1.05] tracking-tighter sm:text-7xl" style={{ ["--d" as string]: "100ms" }}>
+      <h2 className="reveal mt-6 max-w-6xl font-serif text-6xl leading-[0.95] tracking-tight sm:text-8xl" style={{ ["--d" as string]: "100ms" }}>
         {[-1, ...tags.keys()].map((i) => (
           <span key={i}>
             <button
@@ -44,7 +48,7 @@ export function Archive({
                 setFilter(i);
                 setShown(PAGE);
               }}
-              className={`cursor-pointer transition-colors duration-300 ${filter === i ? "text-ink" : "text-ink-3 hover:text-ink-2"}`}
+              className={`cursor-pointer transition-colors duration-300 ${filter === i ? "text-accent italic" : "text-ink-3 hover:text-ink"}`}
             >
               {i < 0 ? "All" : tags[i]}
             </button>
@@ -53,11 +57,24 @@ export function Archive({
         ))}
       </h2>
 
-      <p className="mt-6 font-mono text-[11px] tracking-[0.2em] text-ink-3 uppercase" aria-live="polite">
-        {matches.length.toLocaleString("en-IN")} stamps
-      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <p className="font-mono text-[11px] tracking-[0.2em] text-ink-3 uppercase" aria-live="polite">
+          {matches.length.toLocaleString("en-IN")} stamps
+        </p>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setShown(PAGE);
+          }}
+          placeholder="Search by name"
+          aria-label="Search stamps by name"
+          className="w-full max-w-xs border-b border-white/20 bg-transparent py-2 font-mono text-[12px] tracking-[0.12em] text-ink uppercase outline-none placeholder:text-ink-3 focus:border-accent sm:w-72"
+        />
+      </div>
 
-      <div key={filter} className="archive-grid mt-12 columns-2 gap-5 sm:columns-3 lg:columns-5">
+      <div key={`${filter}-${query}`} className="archive-grid mt-12 columns-2 gap-5 sm:columns-3 lg:columns-5">
         {matches.slice(0, shown).map((s, i) => (
           <button
             key={s.id}

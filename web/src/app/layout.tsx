@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
+import { Inter_Tight, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+// Display: a high-contrast condensed serif, made for very large type. Body/UI: a tight grotesk.
+// Labels: mono.
+const display = Instrument_Serif({ variable: "--font-display", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+const body = Inter_Tight({ variable: "--font-body", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"] });
-const newsreader = Newsreader({ variable: "--font-newsreader", subsets: ["latin"] });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -25,7 +27,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${newsreader.variable} ${mono.variable} h-full antialiased`}>
+    <html lang="en" className={`${body.variable} ${display.variable} ${mono.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

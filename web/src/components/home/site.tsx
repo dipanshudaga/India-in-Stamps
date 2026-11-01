@@ -8,7 +8,7 @@ import type { HomeData } from "@/lib/home-data";
 import { Archive } from "./archive";
 import { Chapter } from "./chapter";
 import { Hero } from "./hero";
-import { Timeline } from "./timeline";
+import { Dock } from "./timeline";
 
 // The whole site: hero (A) -> one chapter per decade (D) -> archive (A). Owns the open stamp.
 export function Site({ data, initialStampId }: { data: HomeData; initialStampId?: number }) {
@@ -51,7 +51,7 @@ export function Site({ data, initialStampId }: { data: HomeData; initialStampId?
         last = Math.max(last, r.bottom + window.scrollY);
       });
       const p = Math.min(Math.max((window.scrollY + vh * 0.5 - first) / (last - first), 0), 1);
-      header.current?.style.setProperty("--tp", p.toFixed(3));
+      document.documentElement.style.setProperty("--tp", p.toFixed(3));
       setActive((prev) => (prev === current ? prev : current));
     };
     const onScroll = () => {
@@ -72,19 +72,22 @@ export function Site({ data, initialStampId }: { data: HomeData; initialStampId?
 
   return (
     <main>
-      <header
-        ref={header}
-        className="fixed inset-x-0 top-0 z-20 flex items-start gap-8 bg-linear-to-b from-page via-page/80 to-transparent px-5 pt-5 pb-8 sm:px-10"
-      >
-        <a href="#top" className="font-serif text-xl tracking-tight text-ink italic">
-          India in Stamps
+      <header ref={header} className="fixed inset-x-0 top-0 z-20 flex items-center justify-between bg-linear-to-b from-page via-page/90 to-transparent px-5 pt-5 pb-12 sm:px-10">
+        <a href="#top" className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent font-serif text-xl leading-none text-page italic">
+            i
+          </span>
+          <span className="font-serif text-2xl tracking-tight text-ink">India in Stamps</span>
         </a>
-        <Timeline chapters={chapters} active={active} onJump={jump} />
+        <nav aria-label="Sections" className="hidden gap-8 font-mono text-[11px] tracking-[0.18em] text-ink-2 uppercase sm:flex">
+          <a href="#chapter-1940" className="transition-colors hover:text-accent">Chapters</a>
+          <a href="#archive" className="transition-colors hover:text-accent">Archive</a>
+        </nav>
         <a
           href="#archive"
-          className="ml-auto font-mono text-[11px] tracking-[0.18em] text-ink-2 uppercase transition-colors hover:text-accent md:ml-0"
+          className="rounded-full border border-white/15 px-5 py-2.5 font-mono text-[11px] tracking-[0.16em] text-ink uppercase transition-colors hover:border-accent hover:text-accent"
         >
-          Archive
+          {total.toLocaleString("en-IN")} stamps
         </a>
       </header>
 
@@ -101,9 +104,32 @@ export function Site({ data, initialStampId }: { data: HomeData; initialStampId?
       ))}
       <Archive stamps={stamps} tags={tags} onOpen={open} />
 
-      <footer className="px-5 pb-12 sm:px-10">
-        <p className="border-t border-white/10 pt-8 font-mono text-[11px] tracking-[0.18em] text-ink-3 uppercase">
-          India in Stamps &middot; {total.toLocaleString("en-IN")} stamps, 1947 &ndash; today
+      <Dock chapters={chapters} active={active} onJump={jump} />
+
+      <footer className="relative overflow-hidden px-5 pt-24 sm:px-10">
+        <div className="grid gap-10 border-t border-white/10 pt-10 font-mono text-[11px] tracking-[0.18em] text-ink-3 uppercase sm:grid-cols-3">
+          <p>
+            {total.toLocaleString("en-IN")} stamps
+            <br />
+            1947 &ndash; today
+          </p>
+          <p className="flex flex-col gap-2">
+            {chapters.map((c) => (
+              <a key={c.key} href={`#chapter-${c.key}`} className="w-fit transition-colors hover:text-accent">
+                {c.label}
+              </a>
+            ))}
+          </p>
+          <p className="flex flex-col gap-2 sm:items-end">
+            <a href="#archive" className="transition-colors hover:text-accent">Archive</a>
+            <a href="#top" className="transition-colors hover:text-accent">Back to top &uarr;</a>
+          </p>
+        </div>
+        <p
+          aria-hidden
+          className="mt-16 pb-14 text-center font-serif text-[16.5vw] leading-[1] tracking-tight whitespace-nowrap text-ink select-none"
+        >
+          India in <span className="text-accent italic">Stamps</span>
         </p>
       </footer>
 

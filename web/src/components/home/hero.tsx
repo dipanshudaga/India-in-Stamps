@@ -77,7 +77,7 @@ export function Hero({
 
   return (
     <section ref={root} className="relative h-svh min-h-[640px] overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(226,184,107,0.07),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,90,45,0.07),transparent_60%)]" />
 
       {SPOTS.map(([x, y, w, rot, depth], i) => {
         const s = stamps[i];
@@ -111,16 +111,30 @@ export function Hero({
 
       <div
         ref={copy}
-        className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 px-6 text-center"
+        className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 px-6 text-center"
       >
         <p className="reveal font-mono text-[11px] tracking-[0.3em] text-accent uppercase" data-in="1">
           {total.toLocaleString("en-IN")} stamps &middot; 1947 &ndash; today
         </p>
-        <h1 className="hero-line max-w-5xl font-serif text-6xl leading-[0.95] tracking-tighter text-ink sm:text-8xl lg:text-[9rem]">
+        <h1 className="hero-line max-w-6xl font-serif text-[4.5rem] leading-[0.88] tracking-tight text-ink sm:text-[8rem] lg:text-[11.5rem]">
           Every stamp India
           <br />
-          <span className="text-ink-2 italic">has ever issued.</span>
+          <span className="text-accent italic">has ever issued.</span>
         </h1>
+        <div className="hero-line pointer-events-auto mt-4 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "0.5s" }}>
+          <a
+            href="#chapter-1940"
+            className="rounded-full bg-accent px-7 py-3.5 font-mono text-[11px] tracking-[0.16em] text-page uppercase transition-transform hover:scale-105"
+          >
+            Start at 1947 &darr;
+          </a>
+          <a
+            href="#archive"
+            className="rounded-full border border-white/20 px-7 py-3.5 font-mono text-[11px] tracking-[0.16em] text-ink uppercase transition-colors hover:border-accent hover:text-accent"
+          >
+            Browse the archive
+          </a>
+        </div>
       </div>
 
       <div className="absolute inset-x-0 bottom-8 z-20 flex flex-col items-center gap-3 font-mono text-[11px] tracking-[0.2em] text-ink-3 uppercase">

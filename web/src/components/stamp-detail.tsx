@@ -84,7 +84,7 @@ export function StampDetail({
     return () => anim.cancel();
   }, [flying, origin]);
 
-  const tilt = "drop-shadow-[0_0_70px_rgba(226,184,107,0.22)]";
+  const tilt = "drop-shadow-[0_0_70px_rgba(255,90,45,0.2)]";
 
   return (
     <>
@@ -129,7 +129,7 @@ export function StampDetail({
           <div className="flex min-h-full flex-col md:flex-row">
             {/* Stage: the stamp, lit from behind. */}
             <div className="relative flex min-h-[60vh] items-center justify-center md:min-h-screen md:w-[55%]">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(226,184,107,0.10),transparent_62%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,90,45,0.10),transparent_62%)]" />
               <div className={`relative aspect-square w-[min(80vw,60vh)] ${STAGE.replace("w-[", "md:w-[")}`}>
                 {thumb && (
                   // eslint-disable-next-line @next/next/no-img-element

@@ -3,13 +3,13 @@
 /* Dark gallery: near-black wall, warm paper-white ink, one gold accent. The stamps' cream paper and
    colours are the only bright things on the page, so they pop. */
 :root {
-  --bg-page: #0b0a09;
+  --bg-page: #0a0908;
   --bg-card: #171512;
   --bg-tint: #12100e;
-  --ink: #f2ede3;
+  --ink: #f5f0e6;
   --ink-2: #a39c8d;
   --ink-3: #6a6458;
-  --accent: #e2b86b;
+  --accent: #ff5a2d; /* postbox vermilion */
   --structural: #3a352d;
 }
 
@@ -22,8 +22,8 @@
   --color-ink-3: var(--ink-3);
   --color-accent: var(--accent);
   --color-structural: var(--structural);
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-newsreader);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
   --font-mono: var(--font-mono);
 }
 
@@ -31,7 +31,7 @@ html,
 body {
   background: var(--bg-page);
   color: var(--ink);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
 }
 
 html {
@@ -86,11 +86,11 @@ html {
 .chapter-title {
   position: relative;
   display: block;
-  font-family: var(--font-newsreader), serif;
-  font-size: clamp(7rem, 24vw, 22rem);
+  font-family: var(--font-display), serif;
+  font-size: clamp(8rem, 30vw, 28rem);
   font-weight: 400;
-  line-height: 0.85;
-  letter-spacing: -0.06em;
+  line-height: 0.82;
+  letter-spacing: -0.03em;
 }
 .chapter-outline {
   display: block;
@@ -128,6 +128,10 @@ html {
 .reveal[data-in] {
   opacity: 1;
   transform: none;
+}
+
+.spot-in {
+  animation: fade-up 0.9s var(--ease) both;
 }
 
 .archive-card {

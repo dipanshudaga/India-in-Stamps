@@ -14,7 +14,7 @@ export type Chapter = {
   start: number; // index range into HomeData.stamps (chronological)
   end: number;
   themes: string[]; // the decade's most common tags, from the data
-  featured: number[]; // two indices into HomeData.stamps
+  spotlight: { i: number; text: string }[]; // three best-documented stamps (index into stamps + catalog blurb)
 };
 
 export type HomeData = {
@@ -63,12 +63,16 @@ export function getHomeData(): HomeData {
       .slice(0, 4)
       .map(([t]) => t);
 
-    // Featured: the two best-documented stamps (longest description), from different years if possible.
+    // Spotlight: the three best-documented stamps (longest description), from different years if possible.
     const ranked = Array.from({ length: j - i }, (_, n) => i + n).sort(
       (a, b) => all[b].description.length - all[a].description.length,
     );
-    const first = ranked[0];
-    const second = ranked.find((x) => all[x].year !== all[first].year) ?? ranked[1] ?? first;
+    const picked: number[] = [];
+    for (const x of ranked) {
+      if (picked.length < 3 && !picked.some((q) => all[q].year === all[x].year)) picked.push(x);
+    }
+    for (const x of ranked) if (picked.length < 3 && !picked.includes(x)) picked.push(x);
+    picked.sort((a, b) => a - b);
 
     chapters.push({
       key,
@@ -77,7 +81,7 @@ export function getHomeData(): HomeData {
       start: i,
       end: j,
       themes,
-      featured: [first, second],
+      spotlight: picked.map((i) => ({ i, text: all[i].description })),
     });
     i = j;
   }
