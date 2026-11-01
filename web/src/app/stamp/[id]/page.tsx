@@ -31,8 +31,8 @@ export default async function StampPage(props: PageProps<"/stamp/[id]">) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-6 py-10">
-      <Link href={`/?s=${stamp.id}`} className="text-sm text-accent underline-offset-4 hover:underline">
-        &larr; See it on the Wall
+      <Link href="/a/archive" className="text-sm text-accent underline-offset-4 hover:underline">
+        &larr; Browse the archive
       </Link>
 
       {image && (

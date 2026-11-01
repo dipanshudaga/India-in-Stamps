@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter_Tight, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Inter_Tight, JetBrains_Mono, Rozha_One } from "next/font/google";
 import "./globals.css";
 
-// Display: a high-contrast condensed serif, made for very large type. Body/UI: a tight grotesk.
-// Labels: mono.
-const display = Instrument_Serif({ variable: "--font-display", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+// Display: Rozha One, a high-contrast poster serif with a real Devanagari companion, so Hindi and
+// English headlines share one voice. Body: Inter Tight. Labels: JetBrains Mono.
+const display = Rozha_One({ variable: "--font-display", subsets: ["latin", "devanagari"], weight: "400" });
 const body = Inter_Tight({ variable: "--font-body", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0a09",
+  themeColor: "#120d0f",
   colorScheme: "dark",
 };
 
