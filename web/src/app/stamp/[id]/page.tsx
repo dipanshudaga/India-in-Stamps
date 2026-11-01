@@ -39,7 +39,7 @@ export default async function StampPage(props: PageProps<"/stamp/[id]">) {
         <div className="flex justify-center rounded-3xl bg-tint px-6 py-10">
           {/* A plain <img>: these are already-optimised transparent cutouts served as static files. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt={stamp.name} className="max-h-[60vh] w-auto max-w-full drop-shadow-[0_18px_28px_rgba(60,40,10,0.25)]" />
+          <img src={image} alt={stamp.name} className="max-h-[60vh] w-auto max-w-full drop-shadow-[0_18px_28px_rgba(0,0,0,0.6)]" />
         </div>
       )}
 

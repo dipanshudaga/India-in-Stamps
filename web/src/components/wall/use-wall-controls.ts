@@ -16,6 +16,15 @@ const MAX_FLICK_PX_PER_S = 2200;
 // World units per screen pixel on the z=0 plane the stamps sit on.
 export const unitsPerPx = (c: Controls) => (2 * c.z * Math.tan((FOV * Math.PI) / 360)) / c.viewH;
 
+// Imperative camera commands for UI buttons (these write the shared mutable `Controls`).
+export function glideTo(c: Controls, x: number, y: number) {
+  c.goto = { x, y };
+  c.vx = c.vy = 0;
+}
+export function zoomBy(c: Controls, factor: number) {
+  c.z = clamp(c.z * factor, Z_MIN, Z_MAX);
+}
+
 // Mouse / touch / trackpad / keyboard control of the wall camera, all writing into one mutable
 // `Controls` object that the render loop reads (so no React render per pointer event):
 //   drag = pan with inertia, wheel or trackpad pinch = zoom toward the cursor, two fingers = pinch,

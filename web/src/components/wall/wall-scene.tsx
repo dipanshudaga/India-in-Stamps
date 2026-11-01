@@ -36,6 +36,8 @@ export type Controls = {
   viewH: number;
   // Wall index of the stamp under the mouse, or -1. Written by the app, read by the render loop.
   hover: number;
+  // Where to glide the camera to (set by the decade rail), or null.
+  goto: { x: number; y: number } | null;
 };
 
 export type Stats = { fps: number; calls: number; tris: number; gx: number };
@@ -86,7 +88,8 @@ void main() {
   vFade = intro;
 
   // Drag tilt: each stamp leans with the pan velocity by its own random amount.
-  float ang = uTilt * (aRand - 0.5) * 0.8;
+  // A little resting rotation so the wall feels pinned by hand; straightens when hovered.
+  float ang = uTilt * (aRand - 0.5) * 0.8 + (aRand - 0.5) * 0.09 * (1.0 - hov);
   float cs = cos(ang);
   float sn = sin(ang);
   vec2 q = position.xy * uSize * mix(0.55, 1.0, intro) * (1.0 + 0.16 * hov);
@@ -110,8 +113,8 @@ varying float vDim;
 void main() {
   vec4 c = texture2D(uMap, vUv);
   if (c.a * vFade < 0.04) discard;
-  vec3 page = vec3(0.980, 0.973, 0.957);
-  gl_FragColor = vec4(mix(c.rgb, page, vDim * 0.4), c.a * vFade);
+  vec3 page = vec3(0.043, 0.039, 0.035);
+  gl_FragColor = vec4(mix(c.rgb, page, vDim * 0.68), c.a * vFade);
 }
 `;
 
@@ -277,6 +280,16 @@ function Sheets({ lens, controls, onReady, onBusy, onYear, onStats }: SceneProps
       c.y += c.vy * travel;
       c.vx *= k;
       c.vy *= k;
+    }
+    if (c.goto) {
+      if (c.dragging) c.goto = null;
+      else {
+        const k2 = 1 - Math.exp(-delta * 3.5);
+        c.x += (c.goto.x - c.x) * k2;
+        c.y += (c.goto.y - c.y) * k2;
+        c.vx = c.vy = 0;
+        if (Math.abs(c.goto.x - c.x) < 0.05) c.goto = null;
+      }
     }
     c.x = Math.min(Math.max(c.x, -2), WIDTH[state.applied] + 2);
     c.y = Math.min(Math.max(c.y, -2), HEIGHT + 2);

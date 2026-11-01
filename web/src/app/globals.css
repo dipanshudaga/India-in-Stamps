@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
-/* Palette ported from the native app's Colors.swift ("modern museum": near-white gallery wall, warm
-   ink). Light only, by design - the stamps' own colours carry the page. */
+/* Dark gallery: near-black wall, warm paper-white ink, one gold accent. The stamps' cream paper and
+   colours are the only bright things on the page, so they pop. */
 :root {
-  --bg-page: #faf8f4;
-  --bg-card: #ffffff;
-  --bg-tint: #f3f0e9;
-  --ink: #26221d;
-  --ink-2: #6b6455;
-  --ink-3: #a79e8c;
-  --accent: #6e6350;
-  --structural: #b8ad98;
+  --bg-page: #0b0a09;
+  --bg-card: #171512;
+  --bg-tint: #12100e;
+  --ink: #f2ede3;
+  --ink-2: #a39c8d;
+  --ink-3: #6a6458;
+  --accent: #e2b86b;
+  --structural: #3a352d;
 }
 
 @theme inline {
@@ -89,7 +89,7 @@ body {
   height: 96px;
   margin: -48px 0 0 -48px;
   background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
   font-size: 0;
 }
 /* The ring frames the stamp; its label sits below, so the stamp stays visible. */
@@ -99,7 +99,7 @@ body {
   top: 100%;
   margin-top: 8px;
   font-size: 10px;
-  color: var(--ink);
+  color: var(--accent);
 }
 .wall-cursor[data-state="dragging"] {
   opacity: 1;
